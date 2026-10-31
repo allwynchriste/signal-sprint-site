@@ -4,226 +4,395 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Signal Sprint — a two-player race</title>
-  <meta name="description" content="Signal Sprint is a live two-player race. Create a room, share the code, chase the glowing signal, and collect the most points before the 60-second clock runs out." />
+  <meta name="description" content="Signal Sprint is a live two-player race. Host a room, share the code, chase the glowing signal, and collect the most points before the 60-second clock runs out." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0b0f1a;
-      --bg-2: #121a2b;
-      --card: #161f33;
-      --line: #263450;
-      --text: #e8edf7;
-      --muted: #9aa8c4;
-      --signal: #7dff9a;
-      --signal-dim: rgba(125, 255, 154, 0.18);
-      --accent: #ffd166;
-      --radius: 18px;
+      --track: #1b34f0;
+      --track-deep: #0f22b8;
+      --lane: #2b47ff;
+      --chalk: #f5f6ff;
+      --chalk-dim: rgba(245, 246, 255, 0.72);
+      --signal: #ffd400;
+      --host: #ffffff;
+      --rival: #ff4d6d;
+      --ink: #0b1030;
+      --radius: 14px;
+      --display: "Unbounded", "Archivo", sans-serif;
+      --body: "Archivo", system-ui, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
     body {
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(1200px 600px at 50% -10%, #1b2a4a 0%, var(--bg) 60%);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
+      font-family: var(--body);
+      background: var(--track);
+      color: var(--chalk);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
     }
     a { color: inherit; }
-    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+    :focus-visible { outline: 3px solid var(--signal); outline-offset: 3px; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-    /* Nav */
-    nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 22px 0;
+    /* ---------- nav ---------- */
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; }
+    .brand { font-family: var(--display); font-weight: 700; font-size: 1rem; letter-spacing: 0.02em; display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand i {
+      width: 14px; height: 14px; border-radius: 50%; background: var(--signal);
+      box-shadow: 0 0 0 4px rgba(255, 212, 0, 0.25);
     }
-    .logo {
-      font-weight: 800; letter-spacing: 0.18em; font-size: 0.85rem; text-transform: uppercase;
-      display: flex; align-items: center; gap: 10px;
+    nav ul { display: flex; gap: 28px; list-style: none; font-weight: 500; font-size: 0.95rem; }
+    nav ul a { text-decoration: none; color: var(--chalk-dim); }
+    nav ul a:hover { color: var(--chalk); }
+    .play {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--signal); color: var(--ink); text-decoration: none;
+      font-family: var(--display); font-weight: 700; font-size: 0.95rem;
+      padding: 14px 22px; border-radius: 999px;
+      transition: transform 0.15s ease;
     }
-    .logo .dot {
-      width: 10px; height: 10px; border-radius: 50%; background: var(--signal);
-      box-shadow: 0 0 12px var(--signal), 0 0 28px var(--signal-dim);
-      animation: pulse 1.6s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.35); opacity: 0.7; }
-    }
-    nav ul { display: flex; gap: 22px; list-style: none; font-size: 0.92rem; color: var(--muted); }
-    nav a { text-decoration: none; }
-    nav a:hover { color: var(--text); }
+    .play:hover { transform: translateY(-2px); }
+    .play.small { padding: 10px 18px; font-size: 0.8rem; }
 
-    /* Hero */
-    .hero { padding: 70px 0 50px; text-align: center; }
-    .eyebrow {
-      display: inline-block; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--signal); border: 1px solid var(--line); padding: 6px 14px; border-radius: 999px;
-      background: var(--signal-dim); margin-bottom: 22px;
+    /* ---------- hero ---------- */
+    .hero {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+      padding: 48px 0 80px;
     }
-    h1 { font-size: clamp(2.3rem, 6vw, 4.2rem); line-height: 1.05; font-weight: 800; letter-spacing: -0.02em; }
-    .hero p { color: var(--muted); font-size: 1.15rem; max-width: 620px; margin: 20px auto 32px; }
-    .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-    .btn {
-      display: inline-block; padding: 14px 26px; border-radius: 12px; font-weight: 700;
-      text-decoration: none; font-size: 1rem; transition: transform 0.15s ease, box-shadow 0.15s ease;
+    .hero h1 {
+      font-family: var(--display); font-weight: 900;
+      font-size: clamp(2.6rem, 5.4vw, 4.6rem); line-height: 0.98; letter-spacing: -0.02em;
     }
-    .btn:hover { transform: translateY(-2px); }
-    .btn-primary { background: var(--signal); color: #06130a; box-shadow: 0 8px 30px var(--signal-dim); }
-    .btn-ghost { border: 1px solid var(--line); color: var(--text); background: rgba(255,255,255,0.02); }
+    .hero h1 span { display: block; }
+    .hero p.lede { font-size: 1.15rem; color: var(--chalk-dim); max-width: 32ch; margin: 24px 0 32px; }
+    .hero .actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    .hero .actions .note { font-size: 0.9rem; color: var(--chalk-dim); }
 
-    /* Board preview */
+    /* ---------- demo board ---------- */
+    .demo { position: relative; }
     .board {
-      margin: 50px auto 0; max-width: 720px; aspect-ratio: 16 / 9; border-radius: var(--radius);
-      border: 1px solid var(--line); position: relative; overflow: hidden;
-      background:
-        linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 40px 40px,
-        linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 40px 40px,
-        var(--bg-2);
+      position: relative; aspect-ratio: 1 / 1; width: 100%; max-width: 520px; margin-left: auto;
+      background: var(--track-deep);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.14) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px);
+      background-size: calc(100% / 12) calc(100% / 12);
+      border-radius: var(--radius); border: 3px solid rgba(255,255,255,0.18);
+      cursor: pointer; overflow: hidden; outline-offset: 4px;
+      box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6);
     }
-    .runner {
-      position: absolute; width: 26px; height: 26px; border-radius: 8px;
+    .board:focus { border-color: var(--signal); }
+    .cell {
+      position: absolute; width: calc(100% / 12); height: calc(100% / 12);
+      display: grid; place-items: center;
+      transition: left 90ms linear, top 90ms linear;
     }
-    .runner.host { background: var(--accent); left: 14%; top: 60%; box-shadow: 0 0 16px rgba(255,209,102,0.6); }
-    .runner.opp { background: #6ea8ff; left: 78%; top: 30%; box-shadow: 0 0 16px rgba(110,168,255,0.6); }
-    .signal {
-      position: absolute; width: 34px; height: 34px; border-radius: 50%; left: 48%; top: 44%;
-      background: var(--signal); box-shadow: 0 0 20px var(--signal), 0 0 60px var(--signal-dim);
-      animation: pulse 1.6s ease-in-out infinite;
+    .cell > b { display: block; width: 62%; height: 62%; border-radius: 6px; }
+    .cell.host > b { background: var(--host); box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
+    .cell.rival > b { background: var(--rival); box-shadow: 0 0 0 3px rgba(255,77,109,0.3); }
+    .cell.signal > b {
+      border-radius: 50%; background: var(--signal);
+      box-shadow: 0 0 0 6px rgba(255,212,0,0.25), 0 0 30px rgba(255,212,0,0.8);
+      animation: throb 1.1s ease-in-out infinite;
     }
+    @keyframes throb { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
     .hud {
-      position: absolute; top: 14px; left: 14px; right: 14px; display: flex; justify-content: space-between;
-      font-size: 0.8rem; color: var(--muted); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      display: flex; justify-content: space-between; align-items: baseline;
+      max-width: 520px; margin: 14px 0 0 auto;
+      font-family: var(--display); font-weight: 700; font-size: 0.9rem;
     }
-    .hud span strong { color: var(--text); font-size: 1rem; }
+    .hud .score { display: flex; align-items: center; gap: 8px; }
+    .hud .score i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .hud .score.you i { background: var(--host); }
+    .hud .score.them i { background: var(--rival); }
+    .hud .clock { font-size: 1.3rem; color: var(--signal); font-variant-numeric: tabular-nums; }
+    .hint {
+      position: absolute; left: 12px; right: 12px; bottom: 12px; text-align: center;
+      background: var(--ink); color: var(--chalk); border-radius: 10px; padding: 14px 18px;
+      font-family: var(--display); font-weight: 700; font-size: clamp(0.85rem, 1.6vw, 0.98rem); line-height: 1.4;
+      transition: opacity 0.2s ease;
+    }
+    .hint small { display: block; font-family: var(--body); font-weight: 500; color: var(--chalk-dim); margin-top: 8px; font-size: 0.9rem; }
+    .hint.hidden { opacity: 0; pointer-events: none; }
+    .hint .result { font-size: clamp(1.1rem, 2.4vw, 1.5rem); color: var(--signal); }
+    .dpad { display: none; }
 
-    /* Sections */
-    section { padding: 70px 0; }
-    h2 { font-size: clamp(1.6rem, 3.4vw, 2.3rem); font-weight: 800; letter-spacing: -0.01em; margin-bottom: 12px; }
-    .sub { color: var(--muted); max-width: 560px; margin-bottom: 36px; }
-    .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-    .card {
-      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px;
+    /* ---------- sections ---------- */
+    section { padding: 72px 0; border-top: 1px solid rgba(255,255,255,0.14); }
+    h2 {
+      font-family: var(--display); font-weight: 700; font-size: clamp(1.5rem, 3vw, 2.1rem);
+      letter-spacing: -0.01em; margin-bottom: 40px; max-width: 20ch;
     }
-    .card .num {
-      width: 38px; height: 38px; border-radius: 10px; background: var(--signal-dim); color: var(--signal);
-      display: grid; place-items: center; font-weight: 800; margin-bottom: 16px;
+
+    /* match timeline */
+    .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+    .timeline::before {
+      content: ""; position: absolute; left: 0; right: 0; top: 11px; height: 2px;
+      background: rgba(255,255,255,0.22);
     }
-    .card h3 { font-size: 1.1rem; margin-bottom: 8px; }
-    .card p { color: var(--muted); font-size: 0.97rem; }
+    .step { padding-right: 32px; position: relative; }
+    .step::before {
+      content: ""; display: block; width: 24px; height: 24px; border-radius: 50%;
+      background: var(--track); border: 3px solid var(--chalk); margin-bottom: 20px; position: relative;
+    }
+    .step:last-child::before { background: var(--signal); border-color: var(--signal); }
+    .step h3 { font-family: var(--display); font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; }
+    .step p { color: var(--chalk-dim); font-size: 0.98rem; max-width: 26ch; }
     kbd {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
-      background: #0e1526; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 2px 7px;
+      font-family: var(--body); font-weight: 600; font-size: 0.85em; color: var(--ink);
+      background: var(--chalk); border-radius: 5px; padding: 1px 7px;
     }
 
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 18px; text-align: center; }
-    .stat { border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 16px; background: rgba(255,255,255,0.02); }
-    .stat strong { display: block; font-size: 2.2rem; color: var(--signal); font-weight: 800; line-height: 1; }
-    .stat span { color: var(--muted); font-size: 0.9rem; }
-
-    .tech { display: flex; flex-wrap: wrap; gap: 10px; }
-    .sub a { color: var(--signal); }
-    .tech span {
-      border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-size: 0.9rem; color: var(--muted);
+    /* big line */
+    .line { text-align: center; padding: 96px 0; }
+    .line p {
+      font-family: var(--display); font-weight: 900;
+      font-size: clamp(1.9rem, 6vw, 4.4rem); line-height: 1.08; letter-spacing: -0.02em;
     }
+    .line p em { font-style: normal; color: var(--signal); }
+    .line .sub { font-family: var(--body); font-weight: 400; font-size: 1.05rem; color: var(--chalk-dim); margin-top: 22px; }
+
+    /* under the hood */
+    .hood { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .hood dl { display: grid; grid-template-columns: max-content 1fr; gap: 14px 28px; font-size: 1rem; }
+    .hood dt { font-weight: 600; }
+    .hood dd { color: var(--chalk-dim); }
+    .hood .links { display: flex; flex-direction: column; gap: 12px; }
+    .hood .links a {
+      display: flex; justify-content: space-between; align-items: center;
+      border: 2px solid rgba(255,255,255,0.22); border-radius: 12px; padding: 16px 20px;
+      text-decoration: none; font-weight: 600; transition: border-color 0.15s ease;
+    }
+    .hood .links a:hover { border-color: var(--signal); }
+    .hood .links a span { color: var(--chalk-dim); font-weight: 400; font-size: 0.9rem; }
 
     footer {
-      border-top: 1px solid var(--line); padding: 36px 0; color: var(--muted); font-size: 0.9rem;
+      border-top: 1px solid rgba(255,255,255,0.14); padding: 36px 0 48px;
       display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      color: var(--chalk-dim); font-size: 0.9rem;
     }
-    footer a { text-decoration: none; color: var(--signal); }
 
+    /* ---------- responsive ---------- */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; gap: 36px; padding-bottom: 56px; }
+      .board, .hud { margin-left: 0; max-width: 100%; }
+      .timeline { grid-template-columns: 1fr 1fr; gap: 36px 0; }
+      .timeline::before { display: none; }
+      .hood { grid-template-columns: 1fr; }
+    }
     @media (max-width: 600px) {
       nav ul { display: none; }
-      .hero { padding-top: 40px; }
-      section { padding: 50px 0; }
+      .timeline { grid-template-columns: 1fr; }
+      .step p { max-width: none; }
+      .dpad {
+        display: grid; grid-template-columns: repeat(3, 56px); gap: 8px; justify-content: center; margin-top: 18px;
+      }
+      .dpad button {
+        height: 56px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.3);
+        background: var(--track-deep); color: var(--chalk); font-size: 1.3rem; cursor: pointer;
+      }
+      .dpad button:active { background: var(--signal); color: var(--ink); }
+      .dpad .u { grid-column: 2; }
+      .dpad .l { grid-column: 1; grid-row: 2; }
+      .dpad .d { grid-column: 2; grid-row: 2; }
+      .dpad .r { grid-column: 3; grid-row: 2; }
+      .hint small.desktop { display: none; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <nav>
-      <div class="logo"><span class="dot"></span> Signal Sprint</div>
+      <a class="brand" href="#"><i></i> Signal Sprint</a>
       <ul>
-        <li><a href="#how">How to play</a></li>
-        <li><a href="#why">Why it works</a></li>
-        <li><a href="#built">Built with</a></li>
+        <li><a href="#match">How a match goes</a></li>
+        <li><a href="#hood">Under the hood</a></li>
       </ul>
+      <a class="play small" href="https://signal-sprint-1.vercel.app/" target="_blank" rel="noopener">Play now</a>
     </nav>
 
     <header class="hero">
-      <span class="eyebrow">Two players · one board · 60 seconds</span>
-      <h1>Move fast.<br />Read the board.</h1>
-      <p>A live multiplayer chase where both players see the same glowing signal, the same clock, and the same winner — from separate devices, anywhere.</p>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://signal-sprint-1.vercel.app/" target="_blank" rel="noopener">Play Signal Sprint</a>
-        <a class="btn btn-ghost" href="#how">See how it works</a>
+      <div>
+        <h1><span>Catch the</span><span>signal first.</span></h1>
+        <p class="lede">A live two-player race. You and a friend on separate devices, one glowing target, sixty seconds on the clock.</p>
+        <div class="actions">
+          <a class="play" href="https://signal-sprint-1.vercel.app/" target="_blank" rel="noopener">Play Signal Sprint</a>
+          <span class="note">Free. No sign-up. Works in any browser.</span>
+        </div>
       </div>
 
-      <div class="board" aria-hidden="true">
-        <div class="hud">
-          <span>Host <strong>4</strong></span>
-          <span><strong>0:37</strong></span>
-          <span>Opponent <strong>3</strong></span>
+      <div class="demo">
+        <div class="board" id="board" tabindex="0" role="application" aria-label="Playable demo: use arrow keys or WASD to move the white runner to the yellow signal">
+          <div class="cell host" id="host"><b></b></div>
+          <div class="cell rival" id="rival"><b></b></div>
+          <div class="cell signal" id="signal"><b></b></div>
+          <div class="hint" id="hint">
+            <div>
+              <div id="hintText">Try it: click the board, then move with arrow keys or WASD.</div>
+              <small class="desktop">15-second sprint against a simple rival. The real game is 60 seconds against a friend.</small>
+            </div>
+          </div>
         </div>
-        <div class="runner host"></div>
-        <div class="signal"></div>
-        <div class="runner opp"></div>
+        <div class="hud">
+          <span class="score you"><i></i> You <span id="scoreYou">0</span></span>
+          <span class="clock" id="clock">0:15</span>
+          <span class="score them"><i></i> Rival <span id="scoreThem">0</span></span>
+        </div>
+        <div class="dpad" aria-label="Touch controls">
+          <button class="u" data-dir="up" aria-label="Move up">↑</button>
+          <button class="l" data-dir="left" aria-label="Move left">←</button>
+          <button class="d" data-dir="down" aria-label="Move down">↓</button>
+          <button class="r" data-dir="right" aria-label="Move right">→</button>
+        </div>
       </div>
     </header>
 
-    <section id="how">
-      <h2>How to play</h2>
-      <p class="sub">No install, no account. One friend hosts, the other joins with a code, and the match launches when both runners are ready.</p>
-      <div class="grid">
-        <div class="card">
-          <div class="num">1</div>
+    <section id="match">
+      <h2>How a match goes</h2>
+      <div class="timeline">
+        <div class="step">
           <h3>Host a room</h3>
-          <p>Enter your name and create a room. You get a short room code to share with one friend.</p>
+          <p>Enter your name and create a room. You get a short code to send to one friend.</p>
         </div>
-        <div class="card">
-          <div class="num">2</div>
-          <h3>Join from anywhere</h3>
-          <p>Your opponent pastes the code on their own device and waits for the launch.</p>
+        <div class="step">
+          <h3>Friend joins</h3>
+          <p>They paste the code on their own phone or laptop and wait for you to launch.</p>
         </div>
-        <div class="card">
-          <div class="num">3</div>
+        <div class="step">
           <h3>Chase the signal</h3>
-          <p>Move with <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys. First runner to the pulse scores it.</p>
+          <p>Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrows. First runner to the pulse scores it, and it jumps somewhere new.</p>
         </div>
-        <div class="card">
-          <div class="num">4</div>
-          <h3>Beat the clock</h3>
-          <p>Most signals collected when the 60-second timer hits zero wins. Hit play again to rematch.</p>
+        <div class="step">
+          <h3>Clock hits zero</h3>
+          <p>Most signals wins. Hit play again and the room is ready for a rematch.</p>
         </div>
       </div>
     </section>
 
-    <section id="why">
-      <h2>Why it works</h2>
-      <p class="sub">Simple rules, shared state, and instant feedback make every match easy to start and fun to replay.</p>
-      <div class="stats">
-        <div class="stat"><strong>2</strong><span>players per room</span></div>
-        <div class="stat"><strong>60s</strong><span>per match</span></div>
-        <div class="stat"><strong>1</strong><span>shared signal</span></div>
-        <div class="stat"><strong>0</strong><span>sign-ups needed</span></div>
-      </div>
-    </section>
+    <div class="line">
+      <p>Two devices.<br />One signal.<br /><em>Sixty seconds.</em></p>
+      <p class="sub">Both players see the same board, the same clock, and the same winner.</p>
+    </div>
 
-    <section id="built">
-      <h2>Built with</h2>
-      <p class="sub">Signal Sprint was built as part of the Handshake AI Skills Studio multiplayer game challenge. This landing page lives on GitHub — <a href="https://github.com/allwynchriste/signal-sprint-site" target="_blank" rel="noopener">view the source</a>.</p>
-      <div class="tech">
-        <span>Real-time multiplayer</span>
-        <span>Room codes</span>
-        <span>Shared game state</span>
-        <span>Keyboard controls</span>
-        <span>Deployed on Vercel</span>
+    <section id="hood">
+      <h2>Under the hood</h2>
+      <div class="hood">
+        <dl>
+          <dt>Multiplayer</dt><dd>Real-time shared state, so both screens stay in sync as runners move.</dd>
+          <dt>Rooms</dt><dd>Short codes instead of accounts. Nothing to install or sign up for.</dd>
+          <dt>Controls</dt><dd>Keyboard on desktop. Each player's input only moves their own runner.</dd>
+          <dt>Hosting</dt><dd>Game deployed on Vercel. This page is served from GitHub Pages.</dd>
+          <dt>Origin</dt><dd>Built for the Handshake AI Skills Studio multiplayer game challenge.</dd>
+        </dl>
+        <div class="links">
+          <a href="https://signal-sprint-1.vercel.app/" target="_blank" rel="noopener">Play the live game <span>signal-sprint-1.vercel.app</span></a>
+          <a href="https://github.com/allwynchriste/signal-sprint-site" target="_blank" rel="noopener">View this page's source <span>github.com</span></a>
+        </div>
       </div>
     </section>
 
     <footer>
-      <span>© 2026 Allwyn Christe · Signal Sprint</span>
-      <span>Built for friends on separate devices · <a href="https://signal-sprint-1.vercel.app/" target="_blank" rel="noopener">Play now</a></span>
+      <span>© 2026 Allwyn Christe</span>
+      <span>Signal Sprint is built for friends on separate devices.</span>
     </footer>
   </div>
+
+  <script>
+    (function () {
+      var N = 12, LEN = 15;
+      var board = document.getElementById('board');
+      var hint = document.getElementById('hint');
+      var hintText = document.getElementById('hintText');
+      var elHost = document.getElementById('host');
+      var elRival = document.getElementById('rival');
+      var elSignal = document.getElementById('signal');
+      var elYou = document.getElementById('scoreYou');
+      var elThem = document.getElementById('scoreThem');
+      var elClock = document.getElementById('clock');
+
+      var host, rival, sig, you, them, left, running = false, timer = null, rivalTimer = null;
+
+      function place(el, p) { el.style.left = (p.x * 100 / N) + '%'; el.style.top = (p.y * 100 / N) + '%'; }
+      function rnd() { return Math.floor(Math.random() * N); }
+      function same(a, b) { return a.x === b.x && a.y === b.y; }
+      function newSignal() {
+        do { sig = { x: rnd(), y: rnd() }; } while (same(sig, host) || same(sig, rival));
+        place(elSignal, sig);
+      }
+      function fmt(s) { return '0:' + (s < 10 ? '0' : '') + s; }
+      function render() { place(elHost, host); place(elRival, rival); elYou.textContent = you; elThem.textContent = them; elClock.textContent = fmt(left); }
+
+      function reset() {
+        host = { x: 1, y: N - 5 }; rival = { x: N - 2, y: 1 }; you = 0; them = 0; left = LEN;
+        newSignal(); render();
+      }
+
+      function check() {
+        if (same(host, sig)) { you++; newSignal(); }
+        else if (same(rival, sig)) { them++; newSignal(); }
+        render();
+      }
+
+      function move(dir) {
+        if (!running) { start(); }
+        if (dir === 'up' && host.y > 0) host.y--;
+        if (dir === 'down' && host.y < N - 1) host.y++;
+        if (dir === 'left' && host.x > 0) host.x--;
+        if (dir === 'right' && host.x < N - 1) host.x++;
+        check();
+      }
+
+      function rivalStep() {
+        // Simple chaser: moves one cell toward the signal, with a little hesitation.
+        if (Math.random() < 0.25) return;
+        var dx = sig.x - rival.x, dy = sig.y - rival.y;
+        if (Math.abs(dx) > Math.abs(dy)) rival.x += dx > 0 ? 1 : -1;
+        else if (dy !== 0) rival.y += dy > 0 ? 1 : -1;
+        check();
+      }
+
+      function start() {
+        running = true;
+        hint.classList.add('hidden');
+        timer = setInterval(function () {
+          left--; render();
+          if (left <= 0) end();
+        }, 1000);
+        rivalTimer = setInterval(rivalStep, 420);
+      }
+
+      function end() {
+        running = false;
+        clearInterval(timer); clearInterval(rivalTimer);
+        var msg = you > them ? 'You caught it. ' + you + '–' + them
+                : you < them ? 'Rival took it. ' + you + '–' + them
+                : 'Dead heat. ' + you + '–' + them;
+        hintText.innerHTML = '<span class="result">' + msg + '</span><br />Press any arrow to go again, or play the real thing with a friend.';
+        hint.classList.remove('hidden');
+        reset();
+      }
+
+      var keys = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+                   w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
+      board.addEventListener('keydown', function (e) {
+        var dir = keys[e.key];
+        if (!dir) return;
+        e.preventDefault();
+        move(dir);
+      });
+      board.addEventListener('click', function () { board.focus(); });
+      document.querySelectorAll('.dpad button').forEach(function (b) {
+        b.addEventListener('click', function () { move(b.getAttribute('data-dir')); });
+      });
+
+      reset();
+    })();
+  </script>
 </body>
 </html>
