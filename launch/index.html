@@ -39,13 +39,14 @@
       display: grid; place-items: center;
       padding: 24px;
     }
+    .frame { position: relative; }
     .screen {
       position: relative;
       width: 1170px; height: 2532px;
       background:
         radial-gradient(900px 700px at 50% 30%, #2642ff 0%, var(--track) 55%, var(--track-deep) 100%);
       overflow: hidden;
-      transform-origin: top center;
+      transform-origin: top left;
       border-radius: 0;
     }
     body.live .screen { border-radius: 120px; box-shadow: 0 60px 120px -40px rgba(0,0,0,0.8); }
@@ -154,6 +155,7 @@
 <body>
   <div class="stage">
     <div>
+      <div class="frame" id="frame">
       <div class="screen" id="screen">
         <div class="clockzone"></div>
         <div class="eyebrow">SIGNAL SPRINT 2.0 · LAUNCH DAY DEC 12</div>
@@ -176,6 +178,7 @@
             <div class="task" id="todayTask">Touch controls for phones</div>
           </div>
         </div>
+      </div>
       </div>
 
       <div class="chrome">
@@ -238,10 +241,11 @@
       function fit() {
         if (!isLive) return;
         var s = Math.min(1, (window.innerWidth - 48) / 1170, (window.innerHeight - 170) / 2532);
-        var scr = document.getElementById("screen");
+        var scr = document.getElementById("screen"), fr = document.getElementById("frame");
         scr.style.transform = "scale(" + s + ")";
-        scr.parentElement.style.height = (2532 * s) + "px";
-        scr.parentElement.style.width = (1170 * s) + "px";
+        fr.style.height = (2532 * s) + "px";
+        fr.style.width = (1170 * s) + "px";
+        fr.style.margin = "0 auto";
       }
       fit(); window.addEventListener("resize", fit);
     })();
