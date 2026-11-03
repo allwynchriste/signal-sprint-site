@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Signal Sprint 2.0 — launch countdown</title>
+  <meta name="description" content="A live countdown lock screen for the Signal Sprint 2.0 launch on December 12, 2026. Every milestone is a node on the board; the runner moves closer each day." />
+  <style>
+    @font-face { font-family: "Unbounded"; font-weight: 700; src: url(fonts/unbounded-latin-700-normal.woff2) format("woff2"); }
+    @font-face { font-family: "Unbounded"; font-weight: 900; src: url(fonts/unbounded-latin-900-normal.woff2) format("woff2"); }
+    @font-face { font-family: "Archivo"; font-weight: 400; src: url(fonts/archivo-latin-400-normal.woff2) format("woff2"); }
+    @font-face { font-family: "Archivo"; font-weight: 500; src: url(fonts/archivo-latin-500-normal.woff2) format("woff2"); }
+    @font-face { font-family: "Archivo"; font-weight: 600; src: url(fonts/archivo-latin-600-normal.woff2) format("woff2"); }
+    @font-face { font-family: "Archivo"; font-weight: 700; src: url(fonts/archivo-latin-700-normal.woff2) format("woff2"); }
+    :root {
+      --track: #1b34f0;
+      --track-deep: #0f22b8;
+      --chalk: #f5f6ff;
+      --chalk-dim: rgba(245, 246, 255, 0.70);
+      --signal: #ffd400;
+      --host: #ffffff;
+      --ink: #0b1030;
+      --display: "Unbounded", "Archivo", sans-serif;
+      --body: "Archivo", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--body);
+      background: var(--ink);
+      color: var(--chalk);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* The phone canvas. 1170 x 2532 logical px = iPhone lock screen.
+       Rendered 1:1 for the wallpaper; scaled to fit on the live page. */
+    .stage {
+      min-height: 100%;
+      display: grid; place-items: center;
+      padding: 24px;
+    }
+    .screen {
+      position: relative;
+      width: 1170px; height: 2532px;
+      background:
+        radial-gradient(900px 700px at 50% 30%, #2642ff 0%, var(--track) 55%, var(--track-deep) 100%);
+      overflow: hidden;
+      transform-origin: top center;
+      border-radius: 0;
+    }
+    body.live .screen { border-radius: 120px; box-shadow: 0 60px 120px -40px rgba(0,0,0,0.8); }
+
+    /* Faint board grid across the whole screen */
+    .screen::before {
+      content: ""; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.07) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(255,255,255,0.07) 2px, transparent 2px);
+      background-size: 117px 117px;
+      pointer-events: none;
+    }
+
+    /* Clock zone: iOS/Android draw the time here. Keep it quiet. */
+    .clockzone {
+      position: absolute; top: 0; left: 0; right: 0; height: 640px;
+    }
+    .eyebrow {
+      position: absolute; top: 560px; left: 0; right: 0; text-align: center;
+      font-family: var(--display); font-weight: 700; font-size: 34px; letter-spacing: 0.04em;
+      color: var(--signal);
+    }
+
+    /* Hero number */
+    .hero { position: absolute; top: 640px; left: 0; right: 0; text-align: center; }
+    .days {
+      font-family: var(--display); font-weight: 900; font-size: 520px; line-height: 0.9;
+      letter-spacing: -0.05em; color: var(--chalk);
+      text-shadow: 0 30px 80px rgba(0,0,0,0.25);
+      font-variant-numeric: tabular-nums;
+    }
+    .days-label {
+      font-family: var(--display); font-weight: 700; font-size: 54px; margin-top: 10px;
+      color: var(--chalk);
+    }
+    .days-label span { color: var(--signal); }
+    .sub { font-size: 40px; color: var(--chalk-dim); margin-top: 18px; font-weight: 500; }
+
+    /* Milestone board */
+    .board {
+      position: absolute; left: 90px; right: 90px; top: 1400px; height: 640px;
+    }
+    .lane {
+      position: absolute; left: 60px; top: 0; bottom: 0; width: 8px;
+      background: rgba(255,255,255,0.18); border-radius: 4px;
+    }
+    .lane-done {
+      position: absolute; left: 60px; top: 0; width: 8px; border-radius: 4px;
+      background: var(--signal); box-shadow: 0 0 24px rgba(255,212,0,0.6);
+    }
+    .node {
+      position: absolute; left: 0; display: flex; align-items: center; gap: 36px;
+      transform: translateY(-50%);
+    }
+    .node .dot {
+      width: 56px; height: 56px; border-radius: 16px; margin-left: 36px;
+      background: var(--track-deep); border: 6px solid rgba(255,255,255,0.45);
+      flex: none;
+    }
+    .node.done .dot { background: var(--signal); border-color: var(--signal); }
+    .node.now .dot {
+      background: var(--host); border-color: var(--host);
+      box-shadow: 0 0 0 14px rgba(255,255,255,0.22), 0 0 40px rgba(255,255,255,0.6);
+    }
+    .node.last .dot {
+      width: 72px; height: 72px; border-radius: 50%; margin-left: 28px;
+      background: var(--signal); border-color: var(--signal);
+      box-shadow: 0 0 0 16px rgba(255,212,0,0.25), 0 0 60px rgba(255,212,0,0.9);
+    }
+    .node .txt { display: flex; flex-direction: column; }
+    .node .t { font-family: var(--display); font-weight: 700; font-size: 44px; color: var(--chalk); }
+    .node .d { font-size: 34px; color: var(--chalk-dim); font-weight: 500; margin-top: 4px; }
+    .node.done .t { color: var(--chalk-dim); text-decoration: line-through; text-decoration-thickness: 3px; }
+    .node.now .t { color: var(--host); }
+    .node.now .d { color: var(--signal); font-weight: 700; }
+    .node.last .t { color: var(--signal); }
+
+    /* Footer: today's focus. Keep clear of the bottom unlock bar. */
+    .today {
+      position: absolute; left: 90px; right: 90px; bottom: 250px;
+      background: var(--ink); border-radius: 36px; padding: 44px 52px;
+      display: flex; align-items: center; gap: 36px;
+    }
+    .today .pulse {
+      width: 28px; height: 28px; border-radius: 50%; background: var(--signal); flex: none;
+      box-shadow: 0 0 0 10px rgba(255,212,0,0.22);
+    }
+    .today .label { font-family: var(--display); font-weight: 700; font-size: 30px; color: var(--signal); letter-spacing: 0.04em; }
+    .today .task { font-size: 40px; font-weight: 600; color: var(--chalk); margin-top: 6px; }
+
+    /* Live page chrome (hidden in the wallpaper render) */
+    .chrome { display: none; }
+    body.live .chrome {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      margin-top: 28px; text-align: center; color: var(--chalk-dim); font-size: 15px;
+    }
+    body.live .chrome a {
+      color: var(--ink); background: var(--signal); text-decoration: none; font-weight: 700;
+      font-family: var(--display); font-size: 14px; padding: 12px 20px; border-radius: 999px;
+    }
+    body.live .chrome .meta { max-width: 42ch; line-height: 1.5; }
+    body.live .chrome .meta a { background: none; color: var(--signal); padding: 0; font-family: var(--body); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div>
+      <div class="screen" id="screen">
+        <div class="clockzone"></div>
+        <div class="eyebrow">SIGNAL SPRINT 2.0 · LAUNCH DAY DEC 12</div>
+
+        <div class="hero">
+          <div class="days" id="days">39</div>
+          <div class="days-label">days <span>to ship</span></div>
+          <div class="sub" id="sub">Two players today. Four by launch.</div>
+        </div>
+
+        <div class="board" id="board">
+          <div class="lane"></div>
+          <div class="lane-done" id="laneDone"></div>
+        </div>
+
+        <div class="today">
+          <div class="pulse"></div>
+          <div>
+            <div class="label" id="todayLabel">THIS WEEK</div>
+            <div class="task" id="todayTask">Touch controls for phones</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chrome">
+        <a href="signal-sprint-launch-lockscreen.png" download>Download wallpaper (1170×2532)</a>
+        <div class="meta">
+          A live countdown lock screen for the Signal Sprint 2.0 launch. The runner moves down the board as each milestone ships.
+          Built for the Handshake AI Skills Studio November challenge · <a href="../">Signal Sprint</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var LAUNCH = new Date("2026-12-12T00:00:00+05:30");
+      var MILESTONES = [
+        { date: "2026-11-10", t: "Touch controls",       d: "Nov 10 · play on phones" },
+        { date: "2026-11-17", t: "4-player rooms",       d: "Nov 17 · bigger matches" },
+        { date: "2026-11-24", t: "Leaderboard",          d: "Nov 24 · keep score across games" },
+        { date: "2026-12-01", t: "Beta with friends",    d: "Dec 1 · fix what breaks" },
+        { date: "2026-12-08", t: "Landing + Product Hunt", d: "Dec 8 · page live, listing drafted" },
+        { date: "2026-12-12", t: "Launch",               d: "Dec 12 · ship it", last: true }
+      ];
+
+      var params = new URLSearchParams(location.search);
+      var now = params.get("at") ? new Date(params.get("at") + "T12:00:00+05:30") : new Date();
+      var isLive = !params.has("render");
+      if (isLive) document.body.classList.add("live");
+
+      var msDay = 86400000;
+      var daysLeft = Math.max(0, Math.ceil((LAUNCH - now) / msDay));
+      document.getElementById("days").textContent = daysLeft;
+      var lbl = document.querySelector(".days-label");
+      if (daysLeft === 0) lbl.innerHTML = "launch <span>day</span>";
+      else if (daysLeft === 1) lbl.innerHTML = "day <span>to ship</span>";
+
+      // Which milestone is current: first one whose date is >= today.
+      var board = document.getElementById("board");
+      var H = 640, n = MILESTONES.length;
+      var nowIdx = MILESTONES.findIndex(function (m) { return new Date(m.date + "T23:59:59+05:30") >= now; });
+      if (nowIdx < 0) nowIdx = n - 1;
+
+      MILESTONES.forEach(function (m, i) {
+        var y = (i / (n - 1)) * H;
+        var el = document.createElement("div");
+        el.className = "node" + (i < nowIdx ? " done" : "") + (i === nowIdx ? " now" : "") + (m.last ? " last" : "");
+        el.style.top = y + "px";
+        el.innerHTML = '<div class="dot"></div><div class="txt"><div class="t">' + m.t + '</div><div class="d">' + m.d + '</div></div>';
+        board.appendChild(el);
+      });
+      document.getElementById("laneDone").style.height = ((nowIdx / (n - 1)) * H) + "px";
+
+      var cur = MILESTONES[nowIdx];
+      document.getElementById("todayTask").textContent = cur.t;
+      var due = Math.ceil((new Date(cur.date + "T23:59:59+05:30") - now) / msDay);
+      document.getElementById("todayLabel").textContent =
+        due <= 0 ? "DUE TODAY" : due === 1 ? "DUE TOMORROW" : "DUE IN " + due + " DAYS";
+
+      // Scale the phone to fit the live page.
+      function fit() {
+        if (!isLive) return;
+        var s = Math.min(1, (window.innerWidth - 48) / 1170, (window.innerHeight - 170) / 2532);
+        var scr = document.getElementById("screen");
+        scr.style.transform = "scale(" + s + ")";
+        scr.parentElement.style.height = (2532 * s) + "px";
+        scr.parentElement.style.width = (1170 * s) + "px";
+      }
+      fit(); window.addEventListener("resize", fit);
+    })();
+  </script>
+</body>
+</html>
